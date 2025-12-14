@@ -1,6 +1,8 @@
 mod dial;
+mod dial_traverse;
+mod direction;
 
-use crate::util::read_input;
+use crate::{day_01::dial_traverse::TraverseZeroDial, util::read_input};
 use dial::Dial;
 
 pub fn solve_part_1() -> u32 {
@@ -13,12 +15,10 @@ pub fn solve_part_1() -> u32 {
 }
 
 pub fn solve_part_2() -> u32 {
-    let input = read_input("src/day_01/input.txt");
+    let sequence = read_input("src/day_01/input.txt");
 
-    0
-}
+    let mut dial = TraverseZeroDial::new();
+    dial.move_sequence(&sequence);
 
-#[cfg(test)]
-mod test {
-    use super::*;
+    dial.zeroes
 }

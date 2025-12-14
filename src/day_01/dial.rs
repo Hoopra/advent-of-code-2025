@@ -1,23 +1,4 @@
-#[derive(Debug, PartialEq)]
-enum Direction {
-    Left(i32),
-    Right(i32),
-}
-
-impl Direction {
-    fn from_string(input: &str) -> Self {
-        let mut chars = input.chars().into_iter();
-
-        let first = chars.nth(0).unwrap();
-        let number_part: String = chars.collect();
-        let steps = number_part.parse::<i32>().unwrap();
-
-        match first {
-            'L' => Self::Left(steps),
-            _ => Self::Right(steps),
-        }
-    }
-}
+use super::direction::Direction;
 
 pub struct Dial {
     pub position: i32,
@@ -68,44 +49,11 @@ impl Dial {
 
         self.position = destination;
     }
-
-    fn move_by_traverse_zero(&mut self, direction: Direction) {
-        match direction {
-            Direction::Left(steps) => self.move_left_traverse_zero(steps),
-            Direction::Right(steps) => self.move_right_traverse_zero(steps),
-        }
-    }
-
-    fn move_right_traverse_zero(&mut self, steps: i32) {
-        let mut steps = steps;
-
-        while steps > 100 {
-            steps -= 100;
-            self.zeroes += 1;
-        }
-    }
-
-    fn move_left_traverse_zero(&mut self, steps: i32) {
-        let mut steps = steps;
-
-        while steps > 100 {
-            steps -= 100;
-            self.zeroes += 1;
-        }
-    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn constructs_direction() {
-        let input = "L123";
-        let direction = Direction::from_string(input);
-
-        assert_eq!(direction, Direction::Left(123));
-    }
 
     #[test]
     fn moves_dial_by_sequence() {
