@@ -18,11 +18,7 @@ impl Range {
     }
 
     pub fn many_from_string(input: &str) -> Vec<Self> {
-        input
-            .split(",")
-            .into_iter()
-            .map(|entry| Self::from_string(entry))
-            .collect()
+        input.split(",").map(Self::from_string).collect()
     }
 }
 
@@ -39,11 +35,11 @@ impl Range {
         range.filter(|entry| is_id_duplicate(*entry)).sum()
     }
 
-    pub fn sum_duplicate_once_ids_in_ranges(ranges: &Vec<Range>) -> u64 {
+    pub fn sum_duplicate_once_ids_in_ranges(ranges: &[Range]) -> u64 {
         ranges.iter().map(Range::sum_duplicate_once_ids).sum()
     }
 
-    pub fn sum_duplicate_at_least_once_ids_in_ranges(ranges: &Vec<Range>) -> u64 {
+    pub fn sum_duplicate_at_least_once_ids_in_ranges(ranges: &[Range]) -> u64 {
         ranges
             .iter()
             .map(Range::sum_duplicate_at_least_once_ids)
@@ -55,7 +51,7 @@ fn is_id_duplicate_once(entry: u64) -> bool {
     let parts = entry.to_string();
     let length = parts.len();
 
-    if length % 2 != 0 {
+    if !length.is_multiple_of(2) {
         return false;
     }
 
@@ -68,7 +64,7 @@ fn is_id_duplicate(entry: u64) -> bool {
     let half = length / 2;
 
     for i in 1..=half {
-        if length % i != 0 {
+        if !length.is_multiple_of(i) {
             continue;
         }
 

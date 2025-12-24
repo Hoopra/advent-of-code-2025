@@ -68,8 +68,6 @@ impl TraverseZeroDial {
             }
         };
 
-        println!("");
-
         if traversed_zero && !started_at_zero {
             zeroes += 1;
         }

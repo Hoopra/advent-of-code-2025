@@ -6,7 +6,7 @@ pub enum Direction {
 
 impl Direction {
     pub fn from_string(input: &str) -> Self {
-        let mut chars = input.chars().into_iter();
+        let mut chars = input.chars();
 
         let first = chars.nth(0).unwrap();
         let number_part: String = chars.collect();

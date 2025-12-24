@@ -10,14 +10,11 @@ impl Map {
         let mut occupied = HashMap::new();
 
         input.lines().enumerate().for_each(|(y, line)| {
-            line.chars()
-                .enumerate()
-                .for_each(|(x, character)| match character {
-                    '@' => {
-                        occupied.insert((x, y), true);
-                    }
-                    _ => {}
-                });
+            line.chars().enumerate().for_each(|(x, character)| {
+                if character == '@' {
+                    occupied.insert((x, y), true);
+                }
+            });
         });
 
         Self { occupied }
@@ -28,7 +25,7 @@ impl Map {
     pub fn rolls_with_max_neighbors(&self, max: usize) -> usize {
         self.occupied
             .iter()
-            .filter(|(position, _)| self.occupied_neighbors(*position) < max)
+            .filter(|(position, _)| self.occupied_neighbors(position) < max)
             .count()
     }
 

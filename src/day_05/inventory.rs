@@ -1,31 +1,7 @@
-use std::cmp::Ordering;
-
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Range {
     start: usize,
     end: usize,
-}
-
-impl PartialOrd for Range {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        let result = self.start.cmp(&other.start);
-
-        match result {
-            Ordering::Equal => self.end.partial_cmp(&other.end),
-            _ => Some(result),
-        }
-    }
-}
-
-impl Ord for Range {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let result = self.start.cmp(&other.start);
-
-        match result {
-            Ordering::Equal => self.end.cmp(&other.end),
-            _ => result,
-        }
-    }
 }
 
 impl Range {
@@ -58,11 +34,11 @@ impl Range {
         }
 
         if self.start < other.start && self.end > other.end {
-            return Some(self.clone());
+            return Some(*self);
         }
 
         if other.start < self.start && other.end > self.end {
-            return Some(other.clone());
+            return Some(*other);
         }
 
         let start = std::cmp::min(self.start, other.start);
@@ -99,9 +75,7 @@ impl Inventory {
         self.ranges.iter().fold(0, |sum, next| sum + next.size())
     }
 
-    fn conflate_ranges(mut self) -> Self {
-        self.ranges.sort();
-
+    fn conflate_ranges(self) -> Self {
         let mut ranges: Vec<Range> = vec![];
         let mut pool = self.ranges;
 
