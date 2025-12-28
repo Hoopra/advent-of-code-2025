@@ -69,7 +69,7 @@ impl Assignment {
                 .numbers
                 .iter()
                 .map(|entry| entry.trim().parse().unwrap())
-                .collect(),
+                .collect::<Vec<u64>>(),
             &self.operator,
         )
     }
@@ -105,8 +105,8 @@ impl Assignment {
     }
 }
 
-fn result_with_operator(numbers: &Vec<u64>, operator: &Operator) -> u64 {
-    let start = numbers.get(0).unwrap();
+fn result_with_operator(numbers: &[u64], operator: &Operator) -> u64 {
+    let start = numbers.first().unwrap();
 
     numbers
         .iter()

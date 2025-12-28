@@ -102,7 +102,7 @@ impl Map2D {
 
     pub fn count_timelines(mut self) -> usize {
         let beam = self.beams.iter().next().unwrap();
-        let first_splitter = self.find_splitter(&beam);
+        let first_splitter = self.find_splitter(beam);
 
         match first_splitter {
             None => None,
@@ -138,7 +138,7 @@ impl Map2D {
             }
         }
 
-        let sum: usize = self.splitters.into_iter().map(|(_, value)| value).sum();
+        let sum: usize = self.splitters.into_values().sum();
 
         sum + 1
     }
