@@ -9,7 +9,7 @@ impl BatteryBank {
         }
     }
 
-    pub fn multiple_from_string(input: String) -> Vec<Self> {
+    pub fn multiple_from_string(input: &str) -> Vec<Self> {
         input.lines().map(BatteryBank::from_string).collect()
     }
 }
@@ -39,91 +39,90 @@ impl BatteryBank {
 }
 
 fn find_maximum_joltage(numbers: &str, target_length: usize) -> u128 {
-    let mut result = numbers.to_string();
+    let mut indices: Vec<usize> = vec![];
 
-    while result.len() > target_length {
-        dbg!(&result);
-        result = remove_lowest_digit(&result)
+    while indices.len() < target_length {
+        dbg!(&indices);
+        let found = highest_digit_index(numbers, Some(&indices));
+
+        match found {
+            None => break,
+            Some(found_index) => {
+                indices.push(found_index);
+            }
+        }
     }
+
+    indices.sort();
+
+    let result: String = numbers
+        .chars()
+        .enumerate()
+        .filter_map(|(index, entry)| match indices.contains(&index) {
+            true => Some(entry),
+            _ => None,
+        })
+        .collect();
 
     result.parse().unwrap()
 }
 
-fn remove_lowest_digit(numbers: &str) -> String {
-    let max = highest_digit(numbers);
+fn highest_digit_index(numbers: &str, indices: Option<&Vec<usize>>) -> Option<usize> {
+    let indices = match indices {
+        Some(value) => value,
+        None => &vec![],
+    };
 
-    let (lowest_index_left, _) = lowest_digit_left(numbers, Some(max));
-    let (lowest_index_right, _) = lowest_digit_right(numbers, Some(max));
+    let start_at = *indices.last().unwrap_or(&0);
+    let mut index = start_at.clone();
+    let mut steps = 0;
 
-    let left = remove_digit_at_index(numbers, lowest_index_left);
-    let right = remove_digit_at_index(numbers, lowest_index_right);
+    let mut result: Option<(usize, u8)> = None;
+    let mut has_value_left = false;
 
-    let left_parsed = left.parse::<u64>();
-
-    match left_parsed {
-        Ok(left_parsed) => match left_parsed > right.parse().unwrap() {
-            true => left,
-            _ => right,
-        },
-        Err(_) => left,
-    }
-
-    // match left.parse::<u64>().unwrap() > right.parse().unwrap() {
-    //     true => left,
-    //     _ => right,
-    // }
-}
-
-fn remove_digit_at_index(entry: &str, index: usize) -> String {
-    entry
+    let numbers: Vec<u8> = numbers
         .chars()
-        .take(index)
-        .chain(entry.chars().skip(index + 1))
-        .collect()
-}
+        .map(|entry| entry.to_digit(10).unwrap().try_into().unwrap())
+        .collect();
 
-fn highest_digit(numbers: &str) -> u8 {
-    numbers.chars().fold(0, |highest, entry| {
-        let value: u8 = entry.to_digit(10).unwrap().try_into().unwrap();
-        if value > highest { value } else { highest }
-    })
-}
-
-fn lowest_digit_left(numbers: &str, stop_at: Option<u8>) -> (usize, u8) {
-    let stop_at = stop_at.unwrap_or(highest_digit(numbers));
-
-    find_lowest(numbers.chars().enumerate(), stop_at)
-}
-
-fn lowest_digit_right(numbers: &str, stop_at: Option<u8>) -> (usize, u8) {
-    let stop_at = stop_at.unwrap_or(highest_digit(numbers));
-    let max_index = numbers.len() - 1;
-
-    let result = find_lowest(numbers.chars().rev().enumerate(), stop_at);
-
-    (max_index - result.0, result.1)
-}
-
-fn find_lowest(chars: impl Iterator<Item = (usize, char)>, stop_at: u8) -> (usize, u8) {
-    let mut result = (0, 9);
-
-    for (index, value) in chars {
-        let value: u8 = value.to_digit(10).unwrap().try_into().unwrap();
-
-        if value == stop_at {
-            return result;
+    while steps < numbers.len() {
+        if indices.contains(&index) {
+            index += 1;
+            steps += 1;
+            has_value_left = true;
+            continue;
         }
 
-        if value == 1 {
-            return (index, value);
+        if index >= numbers.len() {
+            if result.is_some() {
+                return result.map(|(index, _)| index);
+            }
+
+            has_value_left = false;
+            index = 0;
+            continue;
         }
 
-        if value < result.1 {
-            result = (index, value);
+        let value = *numbers.get(index).unwrap();
+
+        if value == 9 {
+            return Some(index);
         }
+
+        match result {
+            None => result = Some((index, value)),
+            Some((_, result_value)) => {
+                if value > result_value || (has_value_left && value >= result_value) {
+                    result = Some((index, value));
+                }
+            }
+        }
+
+        steps += 1;
+        index += 1;
     }
 
-    result
+    result.map(|(index, _)| index)
 }
 
 #[cfg(test)]
@@ -140,23 +139,69 @@ mod test {
 
         let result = find_maximum_joltage("818181911112111", 2);
         assert_eq!(result, 92);
+    }
 
+    #[test]
+    fn finds_maximum_joltage_12_batteries() {
         let result = find_maximum_joltage("987654321111111", 12);
         assert_eq!(result, 987654321111);
+
+        let result = find_maximum_joltage("811111111111119", 12);
+        assert_eq!(result, 811111111119);
+
+        let result = find_maximum_joltage("234234234234278", 12);
+        assert_eq!(result, 434234234278);
+
+        let result = find_maximum_joltage("818181911112111", 12);
+        assert_eq!(result, 888911112111);
     }
 
     #[test]
-    fn finds_lowest_digit() {
-        let result = lowest_digit_left("987654321111111", None);
-        assert_eq!(result, (0, 9));
+    fn finds_correct_highest_indices() {
+        let result = highest_digit_index("234234234234278", None);
+        assert_eq!(result, Some(14));
 
-        let result = lowest_digit_right("987654321111111", None);
-        assert_eq!(result, (14, 1));
+        let result = highest_digit_index("234234234234278", Some(&vec![14]));
+        assert_eq!(result, Some(13));
+
+        let result = highest_digit_index("234234234234278", Some(&vec![14, 13]));
+        assert_eq!(result, Some(2));
+
+        let result = highest_digit_index("234234234234278", Some(&vec![14, 13, 2]));
+        assert_eq!(result, Some(11));
+
+        let result = highest_digit_index("234234234234278", Some(&vec![14, 13, 2, 11]));
+        assert_eq!(result, Some(12));
+
+        let result = highest_digit_index("234234234234278", Some(&vec![14, 13, 2, 5, 11, 12]));
+        assert_eq!(result, Some(8));
+
+        let result = highest_digit_index("234234234234278", Some(&vec![14, 13, 2, 5, 11, 12, 8]));
+        assert_eq!(result, Some(10));
     }
 
     #[test]
-    fn removes_lowest_digit() {
-        let result = remove_lowest_digit("987654321111111");
-        assert_eq!(&result, "98765432111111");
+    fn finds_highest_digit_index() {
+        let result = highest_digit_index("987654321111111", None);
+        assert_eq!(result, Some(0));
+
+        let result = highest_digit_index("987654321111111", Some(&vec![0]));
+        assert_eq!(result, Some(1));
+
+        let result = highest_digit_index("987654321111111", Some(&vec![3]));
+        assert_eq!(result, Some(4));
+
+        let result = highest_digit_index("111111123456789", Some(&vec![14]));
+        assert_eq!(result, Some(13));
+    }
+
+    #[test]
+    fn sums_joltages() {
+        let input = "987654321111111\n811111111111119\n234234234234278\n818181911112111";
+
+        let banks = BatteryBank::multiple_from_string(input);
+        let result = BatteryBank::best_joltages(&banks, 12);
+
+        assert_eq!(result, 3121910778619);
     }
 }
