@@ -12,5 +12,5 @@ pub fn solve_part_1() -> usize {
 pub fn solve_part_2() -> usize {
     let input = read_input("src/day_07/input.txt");
 
-    0
+    Map2D::from_string(&input).count_timelines()
 }
