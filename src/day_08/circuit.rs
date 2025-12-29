@@ -1,8 +1,8 @@
 use std::{cmp::Ordering, collections::HashMap};
 
-#[derive(Debug, Hash)]
+#[derive(Debug, Hash, PartialEq)]
 pub struct Junction {
-    x: u64,
+    pub x: u64,
     y: u64,
     z: u64,
 }
@@ -83,6 +83,52 @@ fn junction_distances(junctions: &[Junction]) -> HashMap<String, f64> {
     distances
 }
 
+fn connect_junction<'a>(
+    key: &'a str,
+    circuits: &mut HashMap<String, u64>,
+    next_circuit: &mut u64,
+) -> (&'a str, &'a str) {
+    let mut parts = key.split('-');
+    let key_1 = parts.next().unwrap();
+    let key_2 = parts.next().unwrap();
+
+    let circuit_1 = circuits.get(key_1);
+    let circuit_2 = circuits.get(key_2);
+
+    if circuit_1.is_some() && circuit_2.is_some() {
+        let circuit_1 = *circuit_1.unwrap();
+        let circuit_2 = *circuit_2.unwrap();
+
+        let found: Vec<String> = circuits
+            .iter()
+            .filter_map(|(key, circuit)| match circuit == &circuit_2 {
+                true => Some(key.to_string()),
+                false => None,
+            })
+            .collect();
+
+        for key in found {
+            circuits.insert(key.clone(), circuit_1);
+        }
+
+        return (key_1, key_2);
+    }
+
+    let target_circuit;
+
+    if circuit_1.is_none() && circuit_2.is_none() {
+        target_circuit = *next_circuit;
+        *next_circuit += 1;
+    } else {
+        target_circuit = *circuit_1.unwrap_or(circuit_2.unwrap_or(&0));
+    }
+
+    circuits.insert(key_1.to_string(), target_circuit);
+    circuits.insert(key_2.to_string(), target_circuit);
+
+    return (key_1, key_2);
+}
+
 pub fn connect_junctions(junctions: &Vec<Junction>, connections: usize) -> HashMap<String, u64> {
     let distances = junction_distances(&junctions);
     let mut distances: Vec<(String, f64)> = distances.into_iter().collect();
@@ -93,54 +139,40 @@ pub fn connect_junctions(junctions: &Vec<Junction>, connections: usize) -> HashM
     });
 
     let mut circuits: HashMap<String, u64> = HashMap::new();
-    let mut next_circuit = 0;
+    let mut next_circuit: u64 = 0;
     let mut connected = 0;
 
     while let Some((key, _)) = distances.pop()
         && connected < connections
     {
-        let mut parts = key.split('-');
-        let key_1 = parts.next().unwrap();
-        let key_2 = parts.next().unwrap();
-
-        let circuit_1 = circuits.get(key_1);
-        let circuit_2 = circuits.get(key_2);
-
         connected += 1;
-
-        if circuit_1.is_some() && circuit_2.is_some() {
-            let circuit_1 = *circuit_1.unwrap();
-            let circuit_2 = *circuit_2.unwrap();
-
-            let found: Vec<String> = circuits
-                .iter()
-                .filter_map(|(key, circuit)| match circuit == &circuit_2 {
-                    true => Some(key.to_string()),
-                    false => None,
-                })
-                .collect();
-
-            for key in found {
-                circuits.insert(key.clone(), circuit_1);
-            }
-
-            continue;
-        }
-
-        let target_circuit;
-
-        if circuit_1.is_none() && circuit_2.is_none() {
-            target_circuit = next_circuit;
-            next_circuit += 1;
-        } else {
-            target_circuit = *circuit_1.unwrap_or(circuit_2.unwrap_or(&0));
-        }
-
-        circuits.insert(key_1.to_string(), target_circuit);
-        circuits.insert(key_2.to_string(), target_circuit);
+        connect_junction(&key, &mut circuits, &mut next_circuit);
     }
 
     circuits
+}
+
+pub fn find_global_connection_point(junctions: &Vec<Junction>) -> Option<(Junction, Junction)> {
+    let distances = junction_distances(&junctions);
+    let mut distances: Vec<(String, f64)> = distances.into_iter().collect();
+
+    distances.sort_by(|(_, distance_a), (_, distance_b)| {
+        let result = distance_b.partial_cmp(distance_a);
+        result.unwrap_or(Ordering::Equal)
+    });
+
+    let mut circuits: HashMap<String, u64> = HashMap::new();
+    let mut next_circuit: u64 = 0;
+
+    while let Some((key, _)) = distances.pop() {
+        let (key_1, key_2) = connect_junction(&key, &mut circuits, &mut next_circuit);
+
+        if circuits.len() == junctions.len() {
+            return Some((Junction::from_string(key_1), Junction::from_string(key_2)));
+        }
+    }
+
+    None
 }
 
 pub fn flatten_circuits(circuits: &HashMap<String, u64>) -> Vec<u64> {
@@ -210,5 +242,21 @@ mod tests {
         let lengths = flatten_circuits(&circuits);
 
         assert_eq!(lengths, vec![5, 4, 2, 2]);
+    }
+
+    #[test]
+    fn determines_junction_connection_that_completes_global_circuit() {
+        let input = "162,817,812\n57,618,57\n906,360,560\n592,479,940\n352,342,300\n466,668,158\n542,29,236\n431,825,988\n739,650,466\n52,470,668\n216,146,977\n819,987,18\n117,168,530\n805,96,715\n346,949,466\n970,615,88\n941,993,340\n862,61,35\n984,92,344\n425,690,689";
+
+        let junctions = Junction::many_from_string(input);
+        let result = find_global_connection_point(&junctions);
+
+        assert_eq!(
+            result.unwrap(),
+            (
+                Junction::from_string("117,168,530"),
+                Junction::from_string("216,146,977"),
+            )
+        );
     }
 }

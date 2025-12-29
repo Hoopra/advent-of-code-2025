@@ -1,7 +1,7 @@
 mod circuit;
 
 use crate::util::read_input;
-use circuit::{Junction, connect_junctions, flatten_circuits};
+use circuit::{Junction, connect_junctions, find_global_connection_point, flatten_circuits};
 
 pub fn solve_part_1() -> u64 {
     let input = read_input("src/day_08/input.txt");
@@ -9,10 +9,13 @@ pub fn solve_part_1() -> u64 {
     multiply_largest_circuits(&input, 3, 1000)
 }
 
-pub fn solve_part_2() -> usize {
-    let _input = read_input("src/day_08/input.txt");
+pub fn solve_part_2() -> u64 {
+    let input = read_input("src/day_08/input.txt");
 
-    0
+    let junctions = Junction::many_from_string(&input);
+    let (junction_1, junction_2) = find_global_connection_point(&junctions).unwrap();
+
+    junction_1.x * junction_2.x
 }
 
 fn multiply_largest_circuits(input: &str, number: usize, connections: usize) -> u64 {
