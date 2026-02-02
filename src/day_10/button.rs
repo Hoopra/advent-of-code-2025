@@ -100,7 +100,7 @@ impl ButtonCombination {
             .filter(|button| !buttons.contains(button))
             .collect();
 
-        let mut result: Vec<ButtonCombination> = possible_buttons
+        possible_buttons
             .into_iter()
             .map(|button| {
                 let mut combination_buttons = buttons.clone();
@@ -108,11 +108,7 @@ impl ButtonCombination {
 
                 ButtonCombination::with_buttons(combination_buttons, target_indicators)
             })
-            .collect();
-
-        result.sort();
-
-        result
+            .collect()
     }
 }
 

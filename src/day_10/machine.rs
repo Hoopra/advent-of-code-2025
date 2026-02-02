@@ -39,11 +39,18 @@ impl Machine {
 
         let mut queue: BinaryHeap<ButtonCombination> = BinaryHeap::from(initial_combinations);
 
+        let mut best: Option<usize> = None;
+
         while queue.len() > 0 {
             let next = queue.pop().unwrap();
+            let buttons_pressed = next.buttons.len();
+
+            if best.is_some() && buttons_pressed >= best.unwrap() {
+                continue;
+            }
 
             if next.discrepancy == 0 {
-                return Some(next.buttons.len());
+                best = Some(buttons_pressed);
             }
 
             let new_combinations = next.add_best_button(&all_buttons, &target_indicators);
@@ -53,7 +60,7 @@ impl Machine {
             }
         }
 
-        None
+        best
     }
 }
 
