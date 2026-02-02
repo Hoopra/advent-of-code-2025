@@ -3,6 +3,14 @@ use std::collections::HashMap;
 
 pub type Button = Vec<usize>;
 
+pub fn buttons_from_string(characters: Vec<&str>) -> Vec<Button> {
+    characters
+        .into_iter()
+        .take_while(|entry| !entry.contains("{"))
+        .map(button_from_string)
+        .collect()
+}
+
 pub fn button_from_string(input: &str) -> Button {
     input
         .chars()
@@ -66,12 +74,18 @@ impl ButtonCombination {
 
         indicators
             .into_iter()
-            .filter(|(index, state)| target_indicators.get(index) == Some(state))
+            .filter(|(index, state)| {
+                let target = target_indicators.get(index);
+                let current = Some(state);
+
+                current != target
+            })
             .count()
     }
 
-    fn score(&self) -> usize {
-        self.buttons.len() + self.discrepancy
+    pub fn score(&self) -> usize {
+        // 2 * self.buttons.len() + self.discrepancy
+        self.buttons.len()
     }
 
     pub fn add_best_button(
@@ -86,7 +100,7 @@ impl ButtonCombination {
             .filter(|button| !buttons.contains(button))
             .collect();
 
-        possible_buttons
+        let mut result: Vec<ButtonCombination> = possible_buttons
             .into_iter()
             .map(|button| {
                 let mut combination_buttons = buttons.clone();
@@ -94,7 +108,11 @@ impl ButtonCombination {
 
                 ButtonCombination::with_buttons(combination_buttons, target_indicators)
             })
-            .collect()
+            .collect();
+
+        result.sort();
+
+        result
     }
 }
 

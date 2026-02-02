@@ -1,7 +1,7 @@
 use std::collections::{BinaryHeap, HashMap};
 
 use super::{
-    button::{Button, ButtonCombination, button_from_string},
+    button::{Button, ButtonCombination, buttons_from_string},
     indicator::{State, indicators_from_string},
 };
 
@@ -16,12 +16,7 @@ impl Machine {
         let mut parts = input.split(' ');
 
         let target_indicators = indicators_from_string(parts.next().unwrap());
-
-        let buttons = parts
-            .into_iter()
-            .take_while(|entry| !entry.contains("{"))
-            .map(button_from_string)
-            .collect();
+        let buttons = buttons_from_string(parts.collect());
 
         Machine {
             target_indicators,
@@ -47,13 +42,13 @@ impl Machine {
         while queue.len() > 0 {
             let next = queue.pop().unwrap();
 
+            if next.discrepancy == 0 {
+                return Some(next.buttons.len());
+            }
+
             let new_combinations = next.add_best_button(&all_buttons, &target_indicators);
 
             for combination in new_combinations {
-                if combination.discrepancy == 0 {
-                    return Some(combination.buttons.len());
-                }
-
                 queue.push(combination);
             }
         }
@@ -96,9 +91,41 @@ mod tests {
 
     #[test]
     fn determines_least_button_presses() {
-        let input = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}";
+        let machine = Machine::from_string("[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}");
+        assert_eq!(machine.least_button_presses_for_target(), Some(2));
+
+        let machine =
+            Machine::from_string("[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}");
+        assert_eq!(machine.least_button_presses_for_target(), Some(3));
+
+        let machine = Machine::from_string(
+            "[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}",
+        );
+        assert_eq!(machine.least_button_presses_for_target(), Some(2));
+
+        let machine = Machine::from_string("[#.#.] (0,1,2,3) (0,2) {25,9,25,9}");
+        assert_eq!(machine.least_button_presses_for_target(), Some(1));
+
+        let machine = Machine::from_string("[#.#.] (0,2) (0,1,2,3) {25,9,25,9}");
+        assert_eq!(machine.least_button_presses_for_target(), Some(1));
+
+        let machine = Machine::from_string("[..##] (1,3) (0,2) (1,2,3) (0,3) (3) {22,169,31,198}");
+        assert_eq!(machine.least_button_presses_for_target(), Some(2));
+
+        let machine = Machine::from_string(
+            "[######..] (1,2,3,5) (1,2,3,6,7) (2,4,5,7) (2,3,4,5,6) (0,1,2,7) (0,1,2,4,5,6,7) {17,46,55,34,19,28,35,41}",
+        );
+        assert_eq!(machine.least_button_presses_for_target(), Some(3));
+    }
+
+    #[test]
+    fn determines_discrepancy() {
+        let input = "[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}";
         let machine = Machine::from_string(input);
 
-        assert_eq!(machine.least_button_presses_for_target(), Some(2));
+        let buttons = buttons_from_string(vec!["(0,4)", "(0,1,2)", "(1,2,3,4)"]);
+        let combination = ButtonCombination::with_buttons(buttons, &machine.target_indicators);
+
+        assert_eq!(combination.discrepancy, 0);
     }
 }
