@@ -83,13 +83,8 @@ impl Inventory {
             let mut to_add = vec![];
             let mut was_conflated = false;
 
-            dbg!(&first);
-
             while let Some(second) = pool.pop() {
-                dbg!(&second);
                 let conflated = first.conflate_with(&second);
-
-                dbg!(&conflated);
 
                 match conflated {
                     None => {
@@ -108,8 +103,6 @@ impl Inventory {
             }
 
             pool.append(&mut to_add);
-
-            dbg!(&pool, &ranges);
         }
 
         Self { ranges }
